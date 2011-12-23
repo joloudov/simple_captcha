@@ -5,9 +5,9 @@ require 'RMagick'
 
 module SimpleCaptcha #:nodoc
   module ImageHelpers #:nodoc
-    
+
     include ConfigTasks
-    
+
     IMAGE_STYLES = [
       'embosed_silver',
       'simply_red',
@@ -18,7 +18,7 @@ module SimpleCaptcha #:nodoc
       'charcoal_grey',
       'almost_invisible'
     ]
-    
+
     DISTORTIONS = ['low', 'medium', 'high']
 
     class << self
@@ -26,9 +26,9 @@ module SimpleCaptcha #:nodoc
         return IMAGE_STYLES[rand(IMAGE_STYLES.length)] if key=='random'
         IMAGE_STYLES.include?(key) ? key : 'simply_blue'
       end
-      
+
       def distortion(key='low')
-        key = 
+        key =
           key == 'random' ?
           DISTORTIONS[rand(DISTORTIONS.length)] :
           DISTORTIONS.include?(key) ? key : 'low'
@@ -42,17 +42,19 @@ module SimpleCaptcha #:nodoc
 
     private
 
-    def append_simple_captcha_code #:nodoc      
+    def append_simple_captcha_code #:nodoc
       color = @simple_captcha_image_options[:color]
-      text = Magick::Draw.new
-      text.annotate(@image, 0, 0, 0, 5, simple_captcha_value(@simple_captcha_image_options[:simple_captcha_key])) do
+       captcha_value = simple_captcha_value(@simple_captcha_image_options[:simple_captcha_key])
+       raise ActiveRecord::RecordNotFound unless captcha_value
+       text = Magick::Draw.new
+       text.annotate(@image, 0, 0, 0, 5, captcha_value) do
         self.font_family = 'arial'
         self.pointsize = 22
         self.fill = color
         self.gravity = Magick::CenterGravity
       end
     end
-    
+
     def set_simple_captcha_image_style #:nodoc
       amplitude, frequency = @simple_captcha_image_options[:distortion]
       case @simple_captcha_image_options[:image_style]
@@ -90,7 +92,7 @@ module SimpleCaptcha #:nodoc
     end
 
     def generate_simple_captcha_image(options={})  #:nodoc
-      @image = Magick::Image.new(110, 30) do 
+      @image = Magick::Image.new(110, 30) do
         self.background_color = 'white'
         self.format = 'JPG'
       end
@@ -100,7 +102,7 @@ module SimpleCaptcha #:nodoc
         :distortion => SimpleCaptcha::ImageHelpers.distortion(options[:distortion]),
         :image_style => SimpleCaptcha::ImageHelpers.image_style(options[:image_style])
       }
-      set_simple_captcha_image_style      
+      set_simple_captcha_image_style
       @image.implode(0.2).to_blob
     end
 
